@@ -32,7 +32,10 @@ def init_db():
 
 
 def generate_slug(title: str) -> str:
-    return slugify(title)
+    if isinstance(title, bytes):  # Проверяем, является ли title байтовым объектом
+        title = title.decode('utf-8')  # Декодируем в строку
+    slug = slugify(title)
+    return slug
 
 
 @router.get('/')
