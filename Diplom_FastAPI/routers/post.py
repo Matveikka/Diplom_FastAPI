@@ -32,8 +32,8 @@ def init_db():
 
 
 def generate_slug(title: str) -> str:
-    if isinstance(title, bytes):  # Проверяем, является ли title байтовым объектом
-        title = title.decode('utf-8')  # Декодируем в строку
+    if isinstance(title, bytes):
+        title = title.decode('utf-8')
     slug = slugify(title)
     return slug
 
@@ -55,17 +55,10 @@ async def new_post_form(request: Request):
 async def new_post(title: str = Form(...), rezume: str = Form(...), info: str = Form(...)):
     slug = generate_slug(title)
     conn = get_db_connection()
-    try:
-        conn.execute('INSERT INTO posts (title, rezume, info, slug) VALUES (?, ?, ?, ?)',
-                     (title, rezume, info, slug))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Slug already exists.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    finally:
-        conn.close()
-
+    conn.execute('INSERT INTO posts (title, rezume, info, slug) VALUES (?, ?, ?, ?)',
+                 (title, rezume, info, slug))
+    conn.commit()
+    conn.close()
     return RedirectResponse(url='/', status_code=303)
 
 
@@ -74,19 +67,13 @@ async def get_post(slug: str, request: Request):
     conn = get_db_connection()
     post = conn.execute('SELECT * FROM posts WHERE slug = ?', (slug,)).fetchone()
     conn.close()
-    if post is None:
-        raise HTTPException(status_code=404, detail="Post not found")
     return templates.TemplateResponse('details.html', {"request": request, "post": post})
 
 
 @router.post('/posts/{slug}/delete')
 async def delete_post(slug: str, request: Request):
     conn = get_db_connection()
-    try:
-        post = conn.execute('DELETE FROM posts WHERE slug = ?', (slug,))
-        conn.commit()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    finally:
-        conn.close()
+    post = conn.execute('DELETE FROM posts WHERE slug = ?', (slug,))
+    conn.commit()
+    conn.close()
     return templates.TemplateResponse('after_delete.html', {"request": request, "post": post})
