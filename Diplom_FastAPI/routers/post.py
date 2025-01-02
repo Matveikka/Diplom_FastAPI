@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Form, Request, HTTPException
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 import sqlite3
-from slugify import slugify
+import re
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -12,6 +12,10 @@ def get_db_connection():
     conn = sqlite3.connect('posts.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def close_db_connection(conn):
+    conn.close()
 
 
 def init_db():
@@ -31,10 +35,19 @@ def init_db():
     conn.close()
 
 
-def generate_slug(title: str) -> str:
-    if isinstance(title, bytes):
-        title = title.decode('utf-8')
-    slug = slugify(title)
+def generate_slug(title):
+    slug = re.sub(r'[^a-zA-Z0-9-]', '-', title.lower())
+    slug = re.sub(r'-+', '-', slug).strip('-')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    original_slug = slug
+    count = cursor.execute('SELECT COUNT(*) FROM posts WHERE slug = ?', (slug,)).fetchone()[0]
+    i = 1
+    while count > 0:
+        slug = f"{original_slug}-{i}"
+        count = cursor.execute('SELECT COUNT(*) FROM posts WHERE slug = ?', (slug,)).fetchone()[0]
+        i += 1
+    close_db_connection(conn)
     return slug
 
 
