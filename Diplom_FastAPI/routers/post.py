@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from urllib.parse import quote
 import sqlite3
 import re
 
@@ -86,7 +87,15 @@ async def get_post(slug: str, request: Request):
 @router.post('/posts/{slug}/delete')
 async def delete_post(slug: str, request: Request):
     conn = get_db_connection()
-    post = conn.execute('DELETE FROM posts WHERE slug = ?', (slug,))
+    post = conn.execute('SELECT title, info, created_at FROM posts WHERE slug = ? ', (slug,)).fetchone()
+    title = post['title']
+    conn.execute('DELETE FROM posts WHERE slug = ?', (slug,))
     conn.commit()
     conn.close()
-    return templates.TemplateResponse('after_delete.html', {"request": request, "post": post})
+    return RedirectResponse(url=f'/posts/deleted/{quote(title)}', status_code=303)
+
+
+@router.get('/posts/deleted/{title}')
+async def after_delete(title: str, request: Request):
+    return templates.TemplateResponse('after_delete.html', {"request": request, "post": {"title": title}})
+
