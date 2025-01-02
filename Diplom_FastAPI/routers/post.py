@@ -9,7 +9,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 def get_db_connection():
-    conn = sqlite3.connect('posts.db')
+    conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -36,7 +36,7 @@ def init_db():
 
 
 def generate_slug(title):
-    slug = re.sub(r'[^a-zA-Z0-9-]', '-', title.lower())
+    slug = re.sub(r'[^a-zA-Zа-яА-Я0-9-]', '-', title.lower())
     slug = re.sub(r'-+', '-', slug).strip('-')
     conn = get_db_connection()
     cursor = conn.cursor()
