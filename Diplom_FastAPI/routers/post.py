@@ -85,7 +85,7 @@ async def get_post(slug: str, request: Request):
 
 
 @router.post('/posts/{slug}/delete')
-async def delete_post(slug: str, request: Request):
+async def delete_post(slug: str):
     conn = get_db_connection()
     post = conn.execute('SELECT title, info, created_at FROM posts WHERE slug = ? ', (slug,)).fetchone()
     title = post['title']
