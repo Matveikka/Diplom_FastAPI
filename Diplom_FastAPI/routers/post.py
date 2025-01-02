@@ -98,4 +98,3 @@ async def delete_post(slug: str):
 @router.get('/posts/deleted/{title}')
 async def after_delete(title: str, request: Request):
     return templates.TemplateResponse('after_delete.html', {"request": request, "post": {"title": title}})
-
